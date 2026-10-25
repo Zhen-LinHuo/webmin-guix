@@ -1,0 +1,14 @@
+--- a/setup.sh
++++ b/setup.sh
+@@ -45,9 +45,9 @@
+ if [ $? != "0" ]; then
+ 	uname -a | grep -i CYGWIN >/dev/null
+ 	if [ $? != "0" ]; then
+-		echo "ERROR: The Webmin install script must be run as root";
++		echo "WARNING: The Webmin install script is not being run as root";
++		echo "         (webmin-guix relaxed this guard, continuing)";
+ 		echo "";
+-		exit 1;
+ 	fi
+ fi
+ 

@@ -1,0 +1,79 @@
+--- a/proc/module.info	2026-10-25 00:00:28.948490990 +0800
++++ b/proc/module.info	2026-10-25 00:00:28.954188759 +0800
+@@ -1,6 +1,6 @@
+ name=Process Manager
+ category=system
+-os_support=solaris *-linux hpux freebsd osf1 irix unixware openserver macos aix netbsd openbsd windows
++os_support=solaris *-linux hpux freebsd osf1 irix unixware openserver macos aix netbsd openbsd windows guix-linux
+ desc=Running Processes
+ depends=mount 2.670
+ longdesc=List, kill and renice running processes on your system.
+--- a/logviewer/module.info	2026-10-25 00:00:28.967404680 +0800
++++ b/logviewer/module.info	2026-10-25 00:00:28.972358961 +0800
+@@ -1,6 +1,6 @@
+ name=logviewer
+ category=system
+-os_support=*-linux
++os_support=*-linux guix-linux
+ desc=System Logs
+ depends=proc 2.670
+ longdesc=View and search all logs available on system
+--- a/useradmin/module.info	2026-10-25 00:00:28.974595420 +0800
++++ b/useradmin/module.info	2026-10-25 00:00:28.979394471 +0800
+@@ -1,6 +1,6 @@
+ name=User Manager
+ category=system
+-os_support=slackware-linux redhat-linux mandrake-linux solaris debian-linux suse-linux united-linux hpux freebsd osf1 open-linux unixware turbo-linux openbsd corel-linux cobalt-linux irix aix netbsd msc-linux openserver generic-linux alpine-linux macos gentoo-linux trustix-linux sol-linux coherent-linux openmamba-linux pardus-linux syno-linux
++os_support=slackware-linux redhat-linux mandrake-linux solaris debian-linux suse-linux united-linux hpux freebsd osf1 open-linux unixware turbo-linux openbsd corel-linux cobalt-linux irix aix netbsd msc-linux openserver generic-linux alpine-linux macos gentoo-linux trustix-linux sol-linux coherent-linux openmamba-linux pardus-linux syno-linux guix-linux
+ desc=Users and Groups
+ longdesc=Create and edit Unix users and groups from the /etc/passwd and /etc/group files.
+ readonly=1
+--- a/mount/module.info	2026-10-25 00:00:28.981491258 +0800
++++ b/mount/module.info	2026-10-25 00:00:28.986911661 +0800
+@@ -1,6 +1,6 @@
+ name=Disk Manager
+ category=system
+-os_support=*-linux solaris freebsd hpux openbsd netbsd 
++os_support=*-linux solaris freebsd hpux openbsd netbsd  guix-linux
+ api_os_support=macos
+ desc=Disk and Network Filesystems
+ depends=proc 2.670
+--- a/fdisk/module.info	2026-10-25 00:00:28.989673444 +0800
++++ b/fdisk/module.info	2026-10-25 00:00:28.994571852 +0800
+@@ -1,6 +1,6 @@
+ name=Partition Manager
+ category=hardware
+-os_support=*-linux
++os_support=*-linux guix-linux
+ desc=Partitions on Local Disks
+ depends=mount proc raid 2.670
+ longdesc=Create and edit partitions on local SCSI, IDE and SATA disks on Linux.
+--- a/raid/module.info	2026-10-25 00:00:28.996276615 +0800
++++ b/raid/module.info	2026-10-25 00:00:29.000768721 +0800
+@@ -1,6 +1,6 @@
+ name=RAID
+ category=hardware
+-os_support=*-linux
++os_support=*-linux guix-linux
+ desc=Linux RAID
+ depends=fdisk mount 2.670
+ longdesc=Create RAID 0, 1, 4, 5, 6, 10 and linear devices on a Linux system.
+--- a/smart-status/module.info	2026-10-25 00:00:29.003143258 +0800
++++ b/smart-status/module.info	2026-10-25 00:00:29.008258654 +0800
+@@ -1,5 +1,5 @@
+ desc=SMART Drive Status
+-os_support=*-linux freebsd macos
++os_support=*-linux freebsd macos guix-linux
+ category=hardware
+ longdesc=Check the status of IDE and SATA drives to detect problems and potential failures.
+ version=2.670
+--- a/samba/module.info	2026-10-25 00:00:29.010418961 +0800
++++ b/samba/module.info	2026-10-25 00:00:29.015098424 +0800
+@@ -1,6 +1,6 @@
+ name=Samba Manager
+ category=servers
+-os_support=solaris *-linux aix hpux freebsd osf1 irix openserver unixware openbsd macos netbsd 
++os_support=solaris *-linux aix hpux freebsd osf1 irix openserver unixware openbsd macos netbsd  guix-linux
+ desc=Samba Windows File Sharing
+ longdesc=Create and edit samba file and print shares.
+ version=2.670

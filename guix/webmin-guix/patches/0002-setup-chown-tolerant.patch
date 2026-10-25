@@ -1,0 +1,22 @@
+--- a/setup.sh
++++ b/setup.sh
+@@ -1000,15 +1000,15 @@
+ echo "Changing ownership and permissions .."
+ # Make all config dirs non-world-readable
+ for m in $newmods; do
+-	chown -R root $config_dir/$m
+-	chgrp -R bin $config_dir/$m
++	chown -R root $config_dir/$m || :
++	chgrp -R bin $config_dir/$m || :
+ 	chmod -R og-rw $config_dir/$m
+ done
+ # Make miniserv config files non-world-readable
+ for f in miniserv.conf miniserv.pem miniserv.users; do
+ 	if [ -e "$config_dir/$f" ]; then
+-		chown -R root $config_dir/$f
+-		chgrp -R bin $config_dir/$f
++		chown -R root $config_dir/$f || :
++		chgrp -R bin $config_dir/$f || :
+ 		chmod -R og-rw $config_dir/$f
+ 	fi
+ done
