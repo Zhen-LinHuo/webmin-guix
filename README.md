@@ -1,3 +1,12 @@
+> **Guix System adaptation.** This fork carries a Guix channel on the `guix`
+> branch: a `webmin-guix` package, a shepherd service, module profiles, and the
+> upstream-shaped patches that make the module set work on a declarative
+> system (no systemd, `/etc` regenerated on reconfigure, no FHS layout). Start
+> at [guix/README.md](guix/README.md). The `master` branch tracks upstream
+> Webmin unchanged.
+
+---
+
 &nbsp;
 <p align="center"><img src="https://user-images.githubusercontent.com/4426533/218263860-f7baf9d6-cb19-4ddc-86dc-ac1b7a3c3a8a.png" alt="Webmin" width="310px"></p>
 &nbsp;
