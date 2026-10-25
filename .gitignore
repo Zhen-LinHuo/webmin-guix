@@ -1,25 +1,3 @@
-# thumbnails
-Thumbs.db
-.xvpics
-
-# python byte-compiled
-*.py[cod]
-
-# temp files
-*~
-*.bak
-test
-*.tmp
-*.site
-core
-
-# build files
-.builds
-.build
-
-# makedist.pl
-tarballs/
-minimal/
-.DS_Store
-.vscode/settings.json
-debug.cgi
+# Guix build outputs — `guix build -L guix webmin-guix` drops these in the CWD
+/result
+/result-*
