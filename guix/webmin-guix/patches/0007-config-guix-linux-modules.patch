@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/useradmin/config-guix-linux
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,43 @@
 +last_count=1000
 +homedir_perms=0750
 +display_max=400
@@ -41,7 +41,6 @@
 +shells=fixed,passwd,shells
 +secmode=0
 +last_show=0
-+config-aix
 +passwd_progmode=0
 +membox=0
 +selinux_con=user_u:object_r:user_home_dir_t
@@ -58,19 +57,18 @@
 +sort_mode=2
 --- /dev/null
 +++ b/samba/config-guix-linux
-@@ -0,0 +1,15 @@
-+list_printers_command=lpc status | grep "[A-z0-9]:" | sed -e 's/://g'
-+smb_passwd=/usr/local/samba/private/smbpasswd
+@@ -0,0 +1,14 @@
++smb_passwd=/var/lib/samba/private/smbpasswd
 +text_lists=0
 +dont_convert=-499
-+name_server=/usr/local/samba/bin/nmbd
-+smb_conf=/usr/local/samba/lib/smb.conf
-+samba_server=/usr/local/samba/bin/smbd
++name_server=/run/current-system/profile/sbin/nmbd
++smb_conf=/etc/samba/smb.conf
++samba_server=/run/current-system/profile/sbin/smbd
 +run_from_inetd=0
-+samba_password_program=/usr/local/samba/bin/smbpasswd
-+samba_status_program=/usr/local/samba/bin/smbstatus
-+swat_path=/usr/local/samba/bin/swat
++samba_password_program=/run/current-system/profile/bin/smbpasswd
++samba_status_program=/run/current-system/profile/bin/smbstatus
++swat_path=
 +sort_mode=0
-+smbgroupedit=/usr/local/samba/bin/smbgroupedit
-+pdbedit=/usr/local/samba/bin/pdbedit
-+net=/usr/local/samba/bin/net
++smbgroupedit=
++pdbedit=/run/current-system/profile/bin/pdbedit
++net=/run/current-system/profile/bin/net
