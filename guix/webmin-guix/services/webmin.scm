@@ -27,11 +27,14 @@
   #:use-module (gnu services shepherd)
   #:use-module (guix gexp)
   #:use-module (guix records)
+  #:use-module (guix packages)                     ; package-version
   #:use-module ((webmin-guix packages webmin)
                 #:select (webmin-guix-nas))
   #:use-module (gnu packages bash)                ; bash-minimal for shell helpers
   #:use-module (gnu packages linux)               ; psmisc lives here (pkill)
-  #:use-module (gnu packages perl)
+  #:use-module (webmin-guix packages perl-crypt)
+  #:use-module (srfi srfi-1)                      ; filter-map
+  #:use-module (srfi srfi-13)                     ; string-join
   #:export (webmin-configuration
             webmin-configuration?
             webmin-configuration-package
@@ -94,6 +97,14 @@ in the foreground (shepherd-tracked pid)."
          ;; there, and a missing binding here aborts service startup entirely
          ;; (measured: "Unbound variable: get-string-all" on boot).
          (use-modules (ice-9 textual-ports))
+         ;; A gexp program is evaluated in its own scope: the module's
+         ;; #:use-module forms do NOT apply here.  Missing these two made the
+         ;; start program die with "Unbound variable" on every attempt, which
+         ;; looked like a broken service with no message.
+         (use-modules (srfi srfi-1) (srfi srfi-13))
+         ;; scandir lives in (ice-9 ftw) — not core, and not inherited
+         ;; from the module's imports either.
+         (use-modules (ice-9 ftw))
          (when (string-null? #$crypt)
            (error "webmin: password-crypt is empty — set a crypt(3) hash \
 in webmin-configuration (e.g. output of `openssl passwd -6')"))
@@ -109,7 +120,7 @@ in webmin-configuration (e.g. output of `openssl passwd -6')"))
                ;; "Full path to perl:" prompt when $perl is set —
                ;; perldef only probes /usr/bin and /usr/local/bin,
                ;; which never exist on Guix (store paths).
-               (perl-bin  #$(file-append perl "/bin/perl"))
+               (perl-bin  #$(file-append perl-crypt "/bin/perl"))
                (conf-file (string-append conf "/miniserv.conf"))
                (cfg       (string-append conf "/config")))
            (unless (file-exists? cfg)
@@ -141,39 +152,90 @@ in webmin-configuration (e.g. output of `openssl passwd -6')"))
              (setenv "noportcheck" "1")
              (unless (zero? (system* (string-append wadir "/setup.sh") wadir))
                (error "webmin: unattended setup.sh failed")))
-           ;; Webmin rebuilds $ENV{PATH} in init_config() from the "path" key of
-           ;; its managed config, and otherwise falls back to the Debian layout
-           ;; (/usr/local/sbin:/usr/sbin:/sbin:/bin) — none of which exists on
-           ;; Guix.  A module then reports "command not found" for a binary that
-           ;; is world-executable in the profile.  Keep the key present so the
-           ;; search path is the system profile, not a guess.  (Measured: with
-           ;; this key absent, /fdisk/ fails; with it present, it lists disks.)
-           (let* ((want     (string-append
-                             "path=/run/current-system/profile/sbin:"
-                             "/run/current-system/profile/bin:"
-                             "/run/privileged/bin"))
-                  ;; No srfi-1 here: shepherd's user module has no `any', and an
-                  ;; unbound binding aborts startup (measured: exit 1, service
-                  ;; respawn-looping instead of serving the panel).
-                  (has-key? (lambda (key)
-                              (lambda (txt)
-                                (let loop ((ls (string-split txt #\newline)))
-                                  (cond ((null? ls) #f)
-                                        ((string-prefix? key (car ls)) #t)
-                                        (else (loop (cdr ls))))))))
-                  (has-path? (has-key? "path=")))
-             (when (file-exists? cfg)
-               (let ((txt (call-with-input-file cfg get-string-all)))
-                 (unless (has-path? txt)
-                   (let ((p (open-file cfg "a")))
-                     (display want p)
-                     (newline p)
-                     (close-port p))))))
-           ;; Module configs are seeded by Webmin's OWN copyconfig.pl, which
-           ;; setup.sh invokes with os_type/real_os_type: it looks for
-           ;; <module>/config-guix-linux, then config-ALL-linux, then config.
-           ;; Patches 0006/0007 supply those files, so no local copying logic is
-           ;; needed here — deliberately, so the lookup order stays upstream's.
+           ;; setup.sh creates the panel user and its ACL only on the
+           ;; interactive path; measured on the installed system, this
+           ;; unattended flow left `miniserv.users' at zero bytes and wrote no
+           ;; `webmin.acl' at all, so miniserv had nobody to authenticate and
+           ;; every login failed while the service looked healthy.
+           ;;
+           ;; Both files are facts of this configuration (the user and its
+           ;; crypt(3) hash come from webmin-configuration), so write them here
+           ;; rather than hoping an upstream branch runs.  Idempotent: rewriting
+           ;; the same bytes on every start keeps the panel user in step with a
+           ;; reconfigure that changes the hash.
+           (let* ((ufile (string-append conf "/miniserv.users"))
+                  (afile (string-append conf "/webmin.acl"))
+                  (mods  (filter-map (lambda (d)
+                                       (and (file-exists?
+                                             (string-append wadir "/" d "/module.info"))
+                                            d))
+                                     ;; scandir's 2nd argument is a selector and
+                                     ;; the 3rd is the sort predicate; passing
+                                     ;; string<? as the selector raises at
+                                     ;; runtime and takes the whole service down.
+                                     (scandir wadir (const #t) string<?))))
+             ;; simple-format, not format: `format' lives in (ice-9 format)
+             ;; and is NOT available in a gexp program.  Calling it creates the
+             ;; file and then raises, so the service exits 1 with two empty
+             ;; files behind it — which is exactly how this looked.
+             (call-with-output-file ufile
+               (lambda (p) (simple-format p "~a:~a:0~%" #$user #$crypt)))
+             (call-with-output-file afile
+               (lambda (p) (simple-format p "~a: ~a~%" #$user (string-join mods " ")))))
+
+           ;; Two things `setup.sh' does only on its interactive path, both
+           ;; missing here (measured on an installed system: `config' held just
+           ;; `path=', no os_type, and no config-guix-linux anywhere under the
+           ;; config dir).  Without them patches 0005/0006/0007 are inert at
+           ;; runtime: modules never see guix-linux and useradmin keeps
+           ;; upstream's base_uid=500, below Guix's uid floor.
+           ;;
+           ;; Seed key by key, never overwriting a value the panel has written
+           ;; since — config.cgi saves into this same file.
+           (let* ((kv-file (lambda (f)
+                             (if (file-exists? f)
+                                 (filter (lambda (l)
+                                           (and (string-contains l "=")
+                                                (not (string-prefix? "#" l))))
+                                         (string-split
+                                          (call-with-input-file f get-string-all)
+                                          #\newline))
+                                 '())))
+                  (key-of (lambda (l) (car (string-split l #\=))))
+                  (present? (lambda (ls k)
+                              (any (lambda (l) (string=? (key-of l) k)) ls)))
+                  (existing (kv-file cfg))
+                  (wanted (append
+                           (kv-file (string-append wadir "/config-guix-linux"))
+                           (list (string-append "os_type=" #$os-t)
+                                 (string-append "real_os_type=" #$ros-t)
+                                 (string-append "os_version=" #$os-v)
+                                 (string-append "real_os_version=" #$ros-v)
+                                 (string-append "version=" #$(package-version pkg))
+                                 (string-append
+                                  "path=/run/current-system/profile/sbin:"
+                                  "/run/current-system/profile/bin:"
+                                  "/run/privileged/bin"))))
+                  (missing (filter (lambda (l)
+                                     (not (present? existing (key-of l))))
+                                   wanted)))
+             (unless (null? missing)
+               (let ((p (open-file cfg "a")))
+                 (for-each (lambda (l) (simple-format p "~a~%" l)) missing)
+                 (close-port p))))
+           ;; Module defaults: upstream copyconfig.pl copies
+           ;; <module>/config-guix-linux to <config-dir>/<module>/config on
+           ;; install.  Same copy, same order, only when the module has no
+           ;; config yet.
+           (for-each
+            (lambda (d)
+              (let ((seed   (string-append wadir "/" d "/config-guix-linux"))
+                    (target (string-append conf "/" d "/config")))
+                (when (and (file-exists? seed) (not (file-exists? target)))
+                  (system* "mkdir" "-p" (string-append conf "/" d))
+                  (copy-file seed target)
+                  (chmod target #o644))))
+            (scandir wadir (const #t) string<?))
            ;; Foreground hand-off: same pid -> shepherd stop/kill works.
            ;;
            ;; PATH is the only thing Webmin's has_command() consults (it walks
