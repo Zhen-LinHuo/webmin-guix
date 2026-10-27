@@ -23,7 +23,8 @@
   #:use-module (guix gexp)
   #:use-module (guix build-system gnu)
   #:use-module (gnu packages perl)
-  #:export (webmin-guix*))
+  #:use-module (webmin-guix packages perl-crypt)
+  #:export (webmin-guix* webmin-guix webmin-guix-nas))
 
 (define (profile-modules name)
   "Return the keep-list of module directory names for profile NAME, or
@@ -153,7 +154,7 @@ disables trimming."
       ;; tree's #!/usr/local/bin/perl to this store path, which also pins
       ;; the closure.  Probe findings: raid/smart modules exec host mdadm/
       ;; smartmontools; Apache is optional (miniserv is the server).
-      (inputs (list perl))
+      (inputs (list perl-crypt))
       (synopsis "Webmin, adapted for declarative Guix systems")
       (description
        "Unofficial Webmin fork whose Guix layer keeps configuration
